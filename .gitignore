@@ -1,0 +1,6 @@
+archives
+*.egg-info
+src/dist
+__pycache__
+__*.py
+src/settings.json
