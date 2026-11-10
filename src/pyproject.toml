@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MOMM_MO2-modlist-manager"
+version = "0.1.0"
+description = "An engine mod compatibility and modlist maintenance tool for Mod Organizer 2"
+readme = "PART1-BASE.md"
+requires-python = ">=3.10"
+license = { text = "GPLv3.0" }
+authors = [{ name = "MOMM contributors" }]
+dependencies = []
+
+[project.scripts]
+mo2-modlist-manager = "mo2_modlist_manager.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mo2_modlist_manager*"]

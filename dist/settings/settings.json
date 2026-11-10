@@ -1,0 +1,44 @@
+{
+    "version": "1.0",
+    "game_engines": [
+        {
+            "id": "skyrim-1.5.97",
+            "name": "Skyrim 1.5.97",
+            "version": "1.5.97",
+            "status": "active"
+        },
+        {
+            "id": "skyrim-1.6.1170",
+            "name": "Skyrim 1.6.1170",
+            "version": "1.6.1170",
+            "status": "active"
+        },
+        {
+            "id": "skyrim-1.7.104",
+            "name": "Skyrim 1.7.104",
+            "version": "1.7.104",
+            "status": "active"
+        }
+    ],
+    "instances": [],
+    "storage": {
+        "master_file": "momm-data/modlist_master.csv",
+        "history_directory": "momm-data/history",
+        "patch_directory": "momm-data/patches",
+        "snapshot_directory": "momm-data/snapshots"
+    },
+    "backup": {
+        "enabled": true,
+        "keep_snapshots": 10,
+        "preserve_imported_modlists": true
+    },
+    "merge": {
+        "default_source_scope": "ask",
+        "ignore_trailing_disabled_entries": true,
+        "require_confirmation": true
+    },
+    "ui": {
+        "show_incompatible_mods": true,
+        "show_unknown_compatibility": true
+    }
+}
