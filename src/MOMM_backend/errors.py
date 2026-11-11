@@ -1,4 +1,4 @@
-"""Application exceptions and structured CSV import diagnostics."""
+"""Application exceptions and structured diagnostics."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from .models import MainModlist
 
 IssueSeverity = Literal["fatal", "error", "warning"]
+
 
 class ModlistManagerError(Exception):
     """Base class for expected, user-presentable application errors."""
@@ -40,8 +41,9 @@ class CSVIssue:
 class CSVLoadResult:
     """Atomic result of a CSV load.
 
-    Warnings do not prevent success. Any fatal/error issue means ``main`` is
-    None. The store never returns a partially populated main list.
+    Warnings do not prevent success. Any fatal/error issue means
+    ``main_list`` is None. The store never returns a partially populated
+    main list.
     """
 
     main_list: MainModlist | None
@@ -62,3 +64,38 @@ class CSVLoadResult:
     def warnings(self) -> tuple[CSVIssue, ...]:
         return tuple(issue for issue in self.issues if issue.severity == "warning")
 
+
+@dataclass(frozen=True, slots=True)
+class WorkflowIssue:
+    """One user-presentable diagnostic produced while committing a workflow."""
+
+    operation: str
+    message: str
+    severity: IssueSeverity = "error"
+    path: str | None = None
+
+
+@dataclass(slots=True)
+class WorkflowCommitResult:
+    """Result of a main-list commit; failures are returned rather than raised.
+
+    A successful result contains the generated history patch. On failure,
+    ``patch`` is None and ``issues`` describes what the UI should display.
+    """
+
+    patch: dict | None = None
+    issues: list[WorkflowIssue] = field(default_factory=list)
+
+    @property
+    def success(self) -> bool:
+        return self.patch is not None and not any(
+            issue.severity in {"fatal", "error"} for issue in self.issues
+        )
+
+    @property
+    def errors(self) -> tuple[WorkflowIssue, ...]:
+        return tuple(issue for issue in self.issues if issue.severity in {"fatal", "error"})
+
+    @property
+    def warnings(self) -> tuple[WorkflowIssue, ...]:
+        return tuple(issue for issue in self.issues if issue.severity == "warning")
