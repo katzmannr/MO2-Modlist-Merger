@@ -2,25 +2,23 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mo2_modlist_manager.csv_store import MasterCSVStore
-from mo2_modlist_manager.enums import EntryType, ReviewStatus
-from mo2_modlist_manager.exporter import export_modlist_text
-from mo2_modlist_manager.history import build_patch, apply_patch
-from mo2_modlist_manager.merge import SourceScope, infer_effective_boundary, preview_merge
-from mo2_modlist_manager.models import MasterModlist, ModlistEntry
-from mo2_modlist_manager.parser import parse_modlist_text, ModlistParseError
-from mo2_modlist_manager.workflow import ReviewWorkflowStore, unreviewed_skse_mods
-
+from MOMM_backend.csv_store import MainCSVStore
+from MOMM_backend.enums import EntryType, ReviewStatus
+from MOMM_backend.exporter import export_modlist_text
+from MOMM_backend.history import build_patch, apply_patch
+from MOMM_backend.merge import SourceScope, infer_effective_boundary, preview_merge
+from MOMM_backend.models import EngineState, MainModlist, ModlistEntry
+from MOMM_backend.parser import parse_modlist_text, ModlistParseError
+from MOMM_backend.workflow import ReviewWorkflowStore, unreviewed_skse_mods
 
 ENGINES = ("skyrim-1.5.97", "skyrim-1.6.1170")
-
 
 class ParserTests(unittest.TestCase):
     def test_parse_and_export_roundtrip(self):
         text = "# header\n+Base\n+separator_Frameworks\n+SKSE Mod\n-Optional Mod\n"
         parsed = parse_modlist_text(text)
         self.assertEqual(len(parsed.entries), 4)
-        self.assertEqual(parsed.entries[1].entry_type, EntryType.SEPARATOR)
+        self.assertEqual(parsed.entries[1].entry_type, EntryType.MOD)
         self.assertTrue(parsed.entries[2].active)
         self.assertFalse(parsed.entries[3].active)
         output = export_modlist_text(parsed)
@@ -37,7 +35,7 @@ class ParserTests(unittest.TestCase):
 
 class CSVTests(unittest.TestCase):
     def test_csv_roundtrip_dynamic_columns_and_dll(self):
-        master = MasterModlist([
+        main_list = MainModlist([
             ModlistEntry("SKSE Mod", active=True, has_dll=True,
                          compatibility={ENGINES[0]: True, ENGINES[1]: None}),
             ModlistEntry("Ordinary Mod", active=False, has_dll=False,
@@ -45,14 +43,14 @@ class CSVTests(unittest.TestCase):
             ModlistEntry("separator_Core", entry_type=EntryType.SEPARATOR),
         ])
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "master.csv"
-            store = MasterCSVStore(ENGINES)
-            store.save(master, path)
+            path = Path(tmp) / "main.csv"
+            store = MainCSVStore(ENGINES)
+            store.save(main_list, path)
             loaded = store.load(path)
-            self.assertEqual(loaded.entries[0].has_dll, True)
-            self.assertIsNone(loaded.entries[0].compatibility[ENGINES[1]])
-            self.assertFalse(loaded.entries[1].active)
-            self.assertIsNone(loaded.entries[2].has_dll)
+            self.assertEqual(loaded.main_list.entries[0].has_dll, True)
+            self.assertEqual(loaded.main_list.entries[0].compatibility[ENGINES[1]], EngineState(None, None))
+            self.assertFalse(loaded.main_list.entries[1].active)
+            self.assertIsNone(loaded.main_list.entries[2].has_dll)
 
     def test_legacy_csv_without_dll_column(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,25 +59,25 @@ class CSVTests(unittest.TestCase):
                 "Name,Type,skyrim-1.5.97,skyrim-1.6.1170,Active\n"
                 "Old Mod,mod,1,,1\n", encoding="utf-8"
             )
-            loaded = MasterCSVStore(ENGINES).load(path)
-            self.assertIsNone(loaded.entries[0].has_dll)
-            self.assertTrue(loaded.entries[0].compatibility[ENGINES[0]])
+            loaded = MainCSVStore(ENGINES).load(path)
+            self.assertIsNone(loaded.main_list.entries[0].has_dll)
+            self.assertTrue(loaded.main_list.entries[0].compatibility[ENGINES[0]])
 
 
 class WorkflowTests(unittest.TestCase):
     def test_review_metadata_is_separate_from_csv(self):
-        master = MasterModlist([
+        main_list = MainModlist([
             ModlistEntry("DLL A", has_dll=True),
             ModlistEntry("DLL B", has_dll=True),
             ModlistEntry("No DLL", has_dll=False),
         ])
-        self.assertEqual(unreviewed_skse_mods(master), ["DLL A", "DLL B"])
-        master.entries[0].review_status = ReviewStatus.DONE
+        self.assertEqual(unreviewed_skse_mods(main_list), ["DLL A", "DLL B"])
+        main_list.entries[0].review_status = ReviewStatus.DONE
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "workflow.json"
             store = ReviewWorkflowStore()
-            store.save(path, master)
-            loaded = MasterModlist([
+            store.save(path, main_list)
+            loaded = MainModlist([
                 ModlistEntry("DLL A", has_dll=True),
                 ModlistEntry("DLL B", has_dll=True),
             ])
@@ -94,24 +92,24 @@ class MergeTests(unittest.TestCase):
         self.assertEqual(infer_effective_boundary(source), 1)
 
     def test_partial_source_never_creates_removal_candidates(self):
-        master = parse_modlist_text("+A\n+B\n+C\n")
+        main_list = parse_modlist_text("+A\n+B\n+C\n")
         source = parse_modlist_text("+A\n+B\n")
-        preview = preview_merge(master, source, scope=SourceScope.PARTIAL)
+        preview = preview_merge(main_list, source, scope=SourceScope.PARTIAL)
         self.assertEqual(preview.missing_candidates, [])
         self.assertEqual(preview.ignored_missing, ["C"])
 
     def test_ask_scope_is_conservative(self):
-        master = parse_modlist_text("+A\n+B\n")
+        main_list = parse_modlist_text("+A\n+B\n")
         source = parse_modlist_text("+A\n")
-        preview = preview_merge(master, source, scope=SourceScope.ASK)
+        preview = preview_merge(main_list, source, scope=SourceScope.ASK)
         self.assertEqual(preview.missing_candidates, [])
         self.assertTrue(preview.warnings)
 
 
 class PatchTests(unittest.TestCase):
     def test_patch_roundtrip_and_revision_guard(self):
-        before = MasterModlist([ModlistEntry("A", compatibility={ENGINES[0]: True})])
-        after = MasterModlist([
+        before = MainModlist([ModlistEntry("A", compatibility={ENGINES[0]: True})])
+        after = MainModlist([
             ModlistEntry("A", active=False, compatibility={ENGINES[0]: False}),
             ModlistEntry("B", compatibility={ENGINES[0]: None}),
         ])

@@ -35,7 +35,7 @@ Approach is straightforward:
 
 The application reads this array and dynamically creates the corresponding compatibility columns.
 For example: Compatibility overview. 
-Illustrative master list with four configured engines
+Illustrative main list with four configured engines
 
 | Mod             | 1.5.97 | 1.6.1130 | 1.6.1170 | 1.7.104 |
 | --------------- | ------ | -------- | -------- | ------- |
@@ -93,7 +93,7 @@ This becomes useful if entries are eventually wanted such as:
 The application should use `id` internally and `name` for presentation.
 No need to implement any additional functionality for this flexibility now.
 
-### 2. An important consequence: the master database must become dynamic
+### 2. An important consequence: the main list database must become dynamic
 
 Original concept uses a CSV with fixed columns:
 
@@ -208,7 +208,7 @@ For example:
     "instances": [],
 
     "storage": {
-        "master_file": "momm-data/modlist_master.csv",
+        "main_file": "momm-data/modlist_main.csv",
         "history_directory": "momm-data/history",
         "patch_directory": "momm-data/patches",
         "snapshot_directory": "momm-data/snapshots"
@@ -288,7 +288,7 @@ There are four things to add to the original concept.
 A. Never remove an engine automatically
 
 If an engine is removed from `settings.json`, its compatibility
-data should not disappear from the master database.
+data should not disappear from the main list database.
 
 Instead, warn the user that the engine has existing data.
 Ideally, distinguish between:
@@ -305,13 +305,13 @@ B. Make configuration changes transactional
 When an engine is added, the application should:
 
 1. Validate the configuration.
-2. Compare the engine registry against the master database.
+2. Compare the engine registry against the main list database.
 3. Identify new and retired engines.
 4. Prepare the necessary database changes.
-5. Back up the existing master.
+5. Back up the existing main list.
 6. Commit the changes.
 
-Never leaving the master database with an incomplete compatibility mapping
+Never leaving the main list database with an incomplete compatibility mapping
 makes the whole stored information saver. There are reasons why to make
 handling of this data similar to a database:
 a) A lot of work is in this data. A loss could mean days to weeks of restoration
@@ -333,9 +333,9 @@ he sees that the version used does not match the stored version.
 D. Keep settings and compatibility history separate
 
 The settings file describes how the application operates.
-The master database describes mod compatibility.
+The main list database describes mod compatibility.
 
-The patches describe changes to the master database.
+The patches describe changes to the main list database.
 This separation from your original design remains correct.
 
 Nothingtheless backup of settings need to be made. 10 backups
@@ -360,7 +360,7 @@ Suggested (updated) development structure:
 | 1     | Settings loader, validation and engine registry |
 | 2     | Dynamic data models                             |
 | 3     | MO2 parser                                      |
-| 4     | Master database and compatibility management    |
+| 4     | Main list database and compatibility management |
 | 5     | Exporter                                        |
 | 6     | Merger and partial-list detection               |
 | 7     | History, patches and backups                    |
@@ -406,7 +406,7 @@ For example:
 
 ```
 momm-data/
-├── master.csv
+├── main.csv
 ├── history/
 │   ├── imports/
 │   │   └── 2026-11-08_143500/
@@ -415,8 +415,8 @@ momm-data/
 │   │       └── changes.json
 │   │
 │   ├── snapshots/
-│   │   ├── master_2026-11-08_143500.csv
-│   │   └── master_2026-11-08_161200.csv
+│   │   ├── main_2026-11-08_143500.csv
+│   │   └── main_2026-11-08_161200.csv
 │   │
 │   └── mods/
 │       └── Example Mod/
@@ -486,8 +486,8 @@ For example:
 | History type               | Retention                |
 | -------------------------- | ------------------------ |
 | Original imported modlists | Permanent                |
-| Master patches             | Permanent                |
-| Full master snapshots      | Configurable, default 10 |
+| Main patches             | Permanent                |
+| Full main snapshots      | Configurable, default 10 |
 | Mod-file manifests         | Configurable, future     |
 | Actual mod-file backups    | Configurable, future     |
 
@@ -497,21 +497,21 @@ deleting original imported modlists or patches.
 #### Architectural consequence
 
 Introduce a small history interface early, even if initially it only
-supports modlist imports and master changes.
+supports modlist imports and main changes.
 
 Conceptually:
 
 ```
 class HistoryManager:    def record_import(self, source, parsed_data):        
-...    def record_master_change(self, patch):        
-...    def create_snapshot(self, master):        
+...    def record_main_change(self, patch):        
+...    def create_snapshot(self, main):        
 ...    # Future:    def record_mod_manifest(self, mod_path):        
 ...
 ```
 
 The future methods don't need implementation now. The important thing is that the rest of the application doesn't need to know how history is physically stored.
 
-Recommendation: Keep CSV as the current master format, JSON for patches and manifests, and original MO2 files as immutable historical inputs.
+Recommendation: Keep CSV as the current main format, JSON for patches and manifests, and original MO2 files as immutable historical inputs.
 
 For this SQLite isn't needed. The proposed system is still small enough for ordinary files, and those files have an important advantage: they remain independently readable, inspectable and manually editable.
 

@@ -18,7 +18,7 @@ def _default_settings() -> AppSettings:
         ],
         "instances": [],
         "storage": {
-            "master_file": "data/modlist_master.csv",
+            "main_file": "data/modlist_current.csv",
             "history_directory": "data/history",
             "patch_directory": "data/patches",
             "snapshot_directory": "data/snapshots"

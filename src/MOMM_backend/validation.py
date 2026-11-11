@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .config import AppSettings
 from .errors import ModelValidationError
-from .models import MasterModlist
+from .models import MainModlist
 
 
 def validate_settings(settings: AppSettings) -> list[str]:
@@ -28,5 +28,5 @@ def validate_settings(settings: AppSettings) -> list[str]:
     return warnings
 
 
-def validate_master(master: MasterModlist, settings: AppSettings) -> None:
-    master.validate(set(settings.engines.ids()))
+def validate_main(main_list: MainModlist, settings: AppSettings) -> None:
+    main_list.validate(set(settings.engines.ids()))

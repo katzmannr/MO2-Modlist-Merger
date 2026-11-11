@@ -7,12 +7,12 @@ from typing import Any
 
 from .engines import EngineRegistry, GameEngine
 from .enums import EngineStatus
-from .errors import ConfigurationError
+from .errors import ConfigurationError, ModelValidationError
 
 
 @dataclass(slots=True)
 class AppSettings:
-    version: int
+    version: str
     engines: EngineRegistry
     instances: list[dict[str, Any]] = field(default_factory=list)
     storage: dict[str, str] = field(default_factory=dict)
@@ -24,11 +24,10 @@ class AppSettings:
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "AppSettings":
         if not isinstance(raw, dict):
-            raise ConfigurationError("The settings root must be in JSON format.")
+            raise ConfigurationError("The settings root must be a JSON object.")
         version = raw.get("version")
         if version != "1.0":
-            raise ConfigurationError(f"Unsupported settings version: {version!r}")
-
+            raise ConfigurationError(f"Unsupported settings version: {version!r}.")
         raw_engines = raw.get("game_engines", [])
         if not isinstance(raw_engines, list):
             raise ConfigurationError("'game_engines' must be an array.")
@@ -36,38 +35,39 @@ class AppSettings:
         engines: list[GameEngine] = []
         for index, item in enumerate(raw_engines):
             if not isinstance(item, dict):
-                raise ConfigurationError(f"game_engines[{index}] must be valid json object.")
+                raise ConfigurationError(f"game_engines[{index}] must be a JSON object.")
             try:
-                status = EngineStatus(item.get("status", "active"))
                 engines.append(GameEngine(
-                    id=str(item["id"]),
-                    name=str(item["name"]),
-                    version=str(item["version"]),
-                    status=status,
+                    id=item["id"],
+                    name=item["name"],
+                    version=item["version"],
+                    status=EngineStatus(item.get("status", "active")),
                 ))
-            except (KeyError, ValueError, TypeError) as exc:
-                raise ConfigurationError(
-                    f"Invalid game_engines[{index}]: {exc}"
-                ) from exc
+            except (KeyError, TypeError, ValueError, ModelValidationError) as exc:
+                raise ConfigurationError(f"Invalid game_engines[{index}]: {exc}") from exc
+        try:
+            registry = EngineRegistry(engines)
+        except ModelValidationError as exc:
+            raise ConfigurationError(f"Invalid game engine registry: {exc}") from exc
 
         known = {"version", "game_engines", "instances", "storage", "backup", "merge", "ui"}
         return cls(
             version=version,
-            engines=EngineRegistry(engines),
+            engines=registry,
             instances=_expect_type(raw, "instances", list, []),
             storage=_expect_type(raw, "storage", dict, {}),
             backup=_expect_type(raw, "backup", dict, {}),
             merge=_expect_type(raw, "merge", dict, {}),
             ui=_expect_type(raw, "ui", dict, {}),
-            extra={k: v for k, v in raw.items() if k not in known},
+            extra={key: value for key, value in raw.items() if key not in known},
         )
 
     def to_dict(self) -> dict[str, Any]:
         result = {
             "version": self.version,
             "game_engines": [
-                {"id": e.id, "name": e.name, "version": e.version, "status": e.status.value}
-                for e in self.engines.all()
+                {"id": engine.id, "name": engine.name, "version": engine.version, "status": engine.status.value}
+                for engine in self.engines.all()
             ],
             "instances": self.instances,
             "storage": self.storage,
@@ -94,7 +94,7 @@ def load_settings(path: str | Path) -> AppSettings:
         raise ConfigurationError(f"Settings file {settings_path} not found.") from exc
     except json.JSONDecodeError as exc:
         raise ConfigurationError(
-            f"Invalid JSON format in {settings_path} at line {exc.lineno}, column {exc.colno}: {exc.msg}"
+            f"Invalid JSON in {settings_path} at line {exc.lineno}, column {exc.colno}: {exc.msg}"
         ) from exc
     except OSError as exc:
         raise ConfigurationError(f"Cannot read settings file {settings_path}: {exc}") from exc
@@ -102,15 +102,11 @@ def load_settings(path: str | Path) -> AppSettings:
 
 
 def save_settings(settings: AppSettings, path: str | Path) -> None:
-    """Write settings atomically so an interrupted save cannot truncate the file."""
-    settings_path = Path(path)
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = settings_path.with_suffix(settings_path.suffix + ".tmp")
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
     try:
-        temporary.write_text(
-            json.dumps(settings.to_dict(), indent=4, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
-        temporary.replace(settings_path)
+        temporary.write_text(json.dumps(settings.to_dict(), indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
+        temporary.replace(destination)
     except OSError as exc:
-        raise ConfigurationError(f"Cannot save settings to {settings_path}: {exc}") from exc
+        raise ConfigurationError(f"Cannot save settings to {destination}: {exc}") from exc

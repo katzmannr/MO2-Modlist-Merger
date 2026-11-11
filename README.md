@@ -1,12 +1,14 @@
-# MO2 Modlist merging tool for multiple Skyrim engines
+# MO2 Modlist merging tool
+
+MOMM - a tool that allows merging modlists of multiple Skyrim engines.
 
 ## Introduction
 
-Application to merge MO2's modlist.txt with existing created master modlist csv.
+MOMM allows to merge multiple MO2's modlist.txt under the use of created main modlist csv.
 
 - Read modlist.txt from an MO2 installation (path: settings)
-- creates a csv (or sql with sqlite if this should get slow) for mods
-- allows to select which mods are 1.5, 1.6, 1.7 (VR indirectly supported)
+- creates a csv (or an sqlite file should it get slow) for mods
+- allows to select which skse mods are 1.5, 1.6, 1.7 (VR indirectly supported)
 - does not allow activating or shuffling mods (MO2 remains source of truth)
 - merging with other modlist (updates, modlist from other installation)
 - handling of partial modlists (recognizing and/or asking the user)
@@ -34,6 +36,23 @@ a modlist maintainer.
 
 ## Usage
 
+- There is a UI and commandline variant of this tool. The command line
+  is currently only used internally for basic on-the-spot backend checks
+- UI has three distinctive parts: Settings, Merging, History
+- Settings allow you to define Paths and some features of the application
+- Merging allows you to automatically or manually load a modlist. Afterwards
+  you need to define which engine mods do support which Skyrim engine
+- Definition of Skyrim Engines used is done via settings. The application
+  cannot find out by itself if a dll supports a specific game engine.
+- Maintaining a single "main" list containing both all mods from your mod list
+  and all engine mods from your mod list. 
+- Limitied amount of merging different mod lists (partial mod lists)
+- History allows you to check past changes you have done. The changes
+  are all sorted by date. On top you can load the 10 previous changes.
+- Exporting of a MO2 modlist. It will not overwrite your MO2 modlist.
+  It falls into your responsibility to compare both modlists and copy
+  or merge the exported modlist into your modlist.
+- Making regular backups of your main MO2 profile you work on is expected.
 
 ## Future ideas
 
@@ -44,6 +63,9 @@ a modlist maintainer.
 - Allow engines to be added or removed
 - Allow import / export of support "knowledge" (import from sources like modding.wiki is
   not planned; format will be a simplified csv format)
+- Allow storing of multiple partial lists (similar to, but different from MO2 profiles).
+  this would especially allow filtering mods not used with some modlists because they lack
+  API support provided by specific engine mods.
 
 ## License
 

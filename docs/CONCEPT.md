@@ -31,13 +31,15 @@ I would not make Active an editable field in the first version. It is important 
 ### 2. The merger
 
 This is a separate operation, with a preview before committing changes.
+The main list is the list that contains information about all engine mods
+and other mods (dependent or not on a specific engine).
 
 Merge workflow
 
 1. Load source modlist.txt
    Parse names, separators, activation states and positions.
 
-2. Compare with master list
+2. Compare with main list
    Identify new entries, existing entries and missing entries.
 
 3. Add new entries (note that the engines will be configurable)
@@ -53,12 +55,12 @@ Merge workflow
    Retained entries preserve their previous relative positions.
 
 6. Commit merged list
-   Update the master data only after confirmation.
+   Update the main list data only after confirmation.
 
 One important complication: incomplete source lists
 
 Use case:
-Suppose a master contains 1,800 entries, but your 1.6.1170 installation contains only 1,500.
+Suppose a main list contains 1,800 entries, but your 1.6.1170 installation contains only 1,500.
 The import its modlist.
 
 The 300 missing entries might be:
@@ -74,9 +76,20 @@ The application cannot distinguish these automatically.
 - Complete source: missing entries are removal candidates, selected by default.
 - Partial source: missing entries are shown, but not selected by default.
 
-This avoids accidentally deleting information from your master list.
+This avoids accidentally deleting information from your main list.
 It also means the application never needs mergerfs knowledge.
 (fyi mergerfs is a user filesystem, Drivepool is an equivalent for Windows)
+
+Use case:
+Suppose a main list contains 1,800 entries and you want to export for your 1.6.1170
+installation. In the end you will have more mods that were disabled for reasons
+beyond this application.
+
+This use case is not covered by this application. The purpose is to only handle
+different engine mods for otherwise identical mod lists. Like profiles in MO2 for
+a specific engine, but you do not manually need to maintain the different engine
+anymore.
+
 
 ### 3. Position handling
 
@@ -107,7 +120,7 @@ Separators must participate in exactly the same ordering mechanism as regular mo
 
 Two separate files will be used.
 
-A. Master database: `modlist_master.csv`
+A. Main database: `modlist_main.csv`
 
 ```
 Name,Type,1.5,1.6,1.7,Active      <- This is the header of the table (mainly for readability)
@@ -155,7 +168,7 @@ This way a source MO2 installation is selectable without making the
 application dependent on a particular filesystem layout.
 
 Additional requirement: 
-Make merging transactional. Never overwrite the master CSV or an MO2
+Make merging transactional. Never overwrite the main CSV or an MO2
 modlist until validation succeeds. Create backups before writing.
 
 ### 5. UI: Console, Textual or Qt?
@@ -213,14 +226,14 @@ mo2-modlist-manager/
 │   └── dialogs.py
 │
 └── data/
-    └── modlist_master.csv
+    └── modlist_main.csv
 ```
 
 Responsibilities:
 
 | Module           | Responsibility                                                |
 | ---------------- | ------------------------------------------------------------- |
-| models.py        | Mod, separator and master list                                |
+| models.py        | Mod, separator and main list                                |
 | parser.py        | Read MO2 modlist.txt                                          |
 | exporter.py      | Generate runtime-specific lists                               |
 | merger.py        | Compare and merge lists                                       |
@@ -232,7 +245,7 @@ Responsibilities:
 Could be done five stages:
 
 1. Parser: Read modlist.txt, distinguish separators and mods, preserve active states and ordering.
-2. Master database: Import into CSV, initialize all compatibility flags to true.
+2. Main database: Import into CSV, initialize all compatibility flags to true.
 3. Exporter: Select 1.5, 1.6 or 1.7 and generate a valid MO2 modlist.txt.
 4. Merger: Add new entries, identify missing entries, review removals and preserve positions.
 5. Interactive UI: Rich console tables, filtering and compatibility toggles.
@@ -241,14 +254,14 @@ The exporter should be implemented early because it provides an excellent way to
 
 ## Important Architectural decisions
 
-Master CSV is the authoritative compatibility database.
-Master modlist.txt and it's iterative changes are the source of truth.
+Main CSV is the authoritative compatibility database.
+Main modlist.txt and it's iterative changes are the source of truth.
 
 In particular:
 
-- Compatibility belongs to the master database.
+- Compatibility belongs to the main database.
 - Activation belongs to the imported MO2 list.
-- Position belongs to the ordered master list.
+- Position belongs to the ordered main list.
 - Filesystem existence is validation, not a prerequisite.
 
 This way the application can become portable to other MO2 installations.

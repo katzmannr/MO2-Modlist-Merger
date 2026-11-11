@@ -9,7 +9,7 @@ read or write MO2 `modlist.txt` files yet.
 - Engine registry with active/retired engine support.
 - Dynamic compatibility mapping (`True`, `False`, or `None` for unknown).
 - Ordered modlist models with explicit mod/separator types.
-- Validation for settings and in-memory master lists.
+- Validation for settings and in-memory main lists.
 - A small CLI to validate and display the configuration.
 
 ## Requirements

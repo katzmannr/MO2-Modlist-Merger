@@ -43,7 +43,7 @@ The following sections represent the proposed major areas of the application.
 | Section | Purpose | Frequency |
 |---|---|---|
 | 1. Overview | Current database and application status | High |
-| 2. Modlist Management | View and maintain the master list | Very high |
+| 2. Modlist Management | View and maintain the main list | Very high |
 | 3. Import & Merge | Import and reconcile MO2 modlists | High |
 | 4. Export | Generate engine-specific modlists | High |
 | 5. History | Review imports, changes and snapshots | Medium |
@@ -66,7 +66,7 @@ Sequence:
 1. Start MOMM.
 2. Load settings.json.
 3. Validate the configuration.
-4. Load the master database.
+4. Load the main list database.
 5. Check the database against the configured engine registry.
 6. Display the overview.
 
@@ -87,7 +87,7 @@ Sequence:
 
 Expected result:
 - The selected instance becomes the current working instance.
-- The selection does not change the master database.
+- The selection does not change the main list database.
 
 ### UC-003 – Review application status
 
@@ -98,7 +98,7 @@ Display information:
 - Number of separators.
 - Number of configured game engines.
 - Last import.
-- Last master modification.
+- Last main list modification.
 - Last snapshot.
 - Pending or unresolved changes, if any.
 
@@ -111,9 +111,9 @@ Expected result:
 
 This is the primary area for maintaining compatibility information.
 
-### UC-010 – Display master modlist
+### UC-010 – Display main list
 
-**Purpose:** Display the complete master list.
+**Purpose:** Display the complete main modlist.
 
 Sequence:
 1. Open Modlist Management.
@@ -169,7 +169,7 @@ Expected result:
 
 ### UC-013 – Filter and search mods
 
-**Purpose:** Find specific entries in a large master list.
+**Purpose:** Find specific entries in a large main list.
 
 Possible filters:
 - Mod name.
@@ -201,7 +201,7 @@ No direct filesystem modifications are performed.
 
 ## 3.3 Import & Merge
 
-This section is responsible for reconciling existing MO2 modlists with the master database.
+This section is responsible for reconciling existing MO2 modlists with the main list database.
 
 ### UC-020 – Import an MO2 modlist
 
@@ -223,10 +223,10 @@ Expected result:
 
 ### UC-021 – Detect new entries
 
-**Purpose:** Find entries in the imported list that do not exist in the master database.
+**Purpose:** Find entries in the imported list that do not exist in the main list database.
 
 Sequence:
-1. Compare imported entries with master entries.
+1. Compare imported entries with main list entries.
 2. Match by exact mod name.
 3. Identify unknown entries.
 4. Add them to the proposed merge.
@@ -234,15 +234,15 @@ Sequence:
 
 Expected result:
 - New entries are clearly identified.
-- Existing master entries are not duplicated.
+- Existing main list entries are not duplicated.
 - New entries retain their source ordering.
 
 ### UC-022 – Detect missing entries
 
-**Purpose:** Identify master entries absent from the imported list.
+**Purpose:** Identify main list entries absent from the imported list.
 
 Sequence:
-1. Compare master entries with imported entries.
+1. Compare main list entries with imported entries.
 2. Establish positional anchors.
 3. Determine the effective list boundary.
 4. Identify missing entries before the boundary.
@@ -264,7 +264,7 @@ Available choices:
 
 Expected result:
 - The selected scope influences missing-entry detection.
-- Partial lists do not automatically cause unrelated master entries to be removed.
+- Partial lists do not automatically cause unrelated main list entries to be removed.
 
 ### UC-024 – Handle trailing disabled entries
 
@@ -295,7 +295,7 @@ Display:
 
 Expected result:
 - User can accept or reject individual proposed removals.
-- No master data is modified before confirmation.
+- No main list data is modified before confirmation.
 
 ### UC-026 – Commit merge
 
@@ -303,14 +303,14 @@ Expected result:
 
 Sequence:
 1. Validate the proposed result.
-2. Create a backup of the current master.
+2. Create a backup of the current main list.
 3. Generate the corresponding patch.
 4. Apply the changes.
-5. Save the updated master.
+5. Save the updated main list.
 6. Record the import and merge event.
 
 Expected result:
-- Master database contains the approved changes.
+- Main list database contains the approved changes.
 - Previous state remains recoverable.
 - Original imported modlist remains preserved.
 
@@ -324,7 +324,7 @@ Sequence:
 3. Return to the previous state.
 
 Expected result:
-- Master database remains unchanged.
+- Main list database remains unchanged.
 - Imported source and its history remain available.
 
 ---
@@ -338,7 +338,7 @@ Expected result:
 Sequence:
 1. Select a configured game engine.
 2. Select the target MO2 instance and profile.
-3. Filter the master list using the selected engine's compatibility.
+3. Filter the main list list using the selected engine's compatibility.
 4. Preserve the original ordering.
 5. Preserve separators.
 6. Preserve activation states.
@@ -408,11 +408,11 @@ Sequence:
 3. Display the parsed source snapshot.
 
 Expected result:
-- Historical data can be reviewed without changing the current master.
+- Historical data can be reviewed without changing the current main list.
 
-### UC-042 – Review master changes
+### UC-042 – Review main list changes
 
-**Purpose:** Inspect modifications made to the master database.
+**Purpose:** Inspect modifications made to the main list database.
 
 Display:
 - Change timestamp.
@@ -425,19 +425,19 @@ Display:
 Expected result:
 - Individual changes can be traced.
 
-### UC-043 – Review master snapshots
+### UC-043 – Review main list snapshots
 
 **Purpose:** Inspect previously saved full database states.
 
 Sequence:
 1. Open snapshot history.
 2. Select a snapshot.
-3. Display its contents or compare it with the current master.
+3. Display its contents or compare it with the current main list.
 
 Expected result:
-- Historical master states remain independently readable.
+- Historical main list states remain independently readable.
 
-### UC-044 – Restore a previous master state
+### UC-044 – Restore a previous main list state
 
 **Purpose:** Recover from an unwanted change.
 
@@ -445,7 +445,7 @@ Sequence:
 1. Select a historical snapshot.
 2. Review the differences.
 3. Confirm restoration.
-4. Create a backup of the current master.
+4. Create a backup of the current main list.
 5. Restore the selected state.
 6. Record the restoration as a new history event.
 
@@ -496,7 +496,7 @@ Expected result:
 **Purpose:** Change MOMM's storage locations.
 
 Configurable locations:
-- Master database.
+- Main list database.
 - History directory.
 - Patch directory.
 - Snapshot directory.
@@ -522,7 +522,7 @@ Expected result:
 
 ## 3.7 Maintenance and Validation
 
-### UC-060 – Validate master database
+### UC-060 – Validate main list database
 
 **Purpose:** Check database integrity.
 
@@ -556,20 +556,20 @@ Expected result:
 **Purpose:** Save a recoverable database state.
 
 Sequence:
-1. Create a full master snapshot.
+1. Create a full main list snapshot.
 2. Store it with a timestamp.
 3. Update snapshot retention.
 4. Preserve permanent history records.
 
 Expected result:
-- A recoverable master snapshot exists.
+- A recoverable main list snapshot exists.
 
 ### UC-063 – Recover from invalid data
 
 **Purpose:** Recover after an unsuccessful write or corrupted database.
 
 Sequence:
-1. Detect invalid master data.
+1. Detect invalid main list data.
 2. Prevent further modifications.
 3. Identify the most recent valid snapshot.
 4. Offer recovery.
@@ -650,7 +650,7 @@ The following scenarios deserve particular attention:
 9. Export with unknown compatibility entries.
 10. Add a new engine without losing existing compatibility information.
 11. Retire an engine without deleting its historical data.
-12. Restore a previous master snapshot.
+12. Restore a previous main list snapshot.
 
 All operations that modify persistent data should additionally be tested for cancellation, validation failure and unsuccessful writes.
 
@@ -661,7 +661,7 @@ All operations that modify persistent data should additionally be tested for can
 The following principles apply throughout MOMM:
 
 1. **MO2 remains authoritative for mod installation and activation.**
-2. **MOMM maintains compatibility and master ordering.**
+2. **MOMM maintains compatibility and main list ordering.**
 3. Original imported modlists are immutable historical inputs.
 4. Compatibility is independent of activation.
 5. Separators are first-class ordered entries.

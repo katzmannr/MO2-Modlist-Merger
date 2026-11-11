@@ -11,13 +11,13 @@ For each import, preserve:
 
 - Original `modlist.txt`, byte-for-byte if possible.
 - A timestamped parsed snapshot.
-- The changes made to the master database.
+- The changes made to the main list database.
 
 For example:
 
 ```
 momm-data/
-├── master.csv
+├── main.csv
 ├── history/
 │   ├── 2026-11-08_143500/
 │   │   ├── modlist.txt
@@ -36,11 +36,11 @@ momm-data/
 Use a timestamp format of `YYYY-MM-DD_HHMMSS` to avoid filename collisions and
 make chronological sorting natural.
 
-### Master + patches vs. full snapshots
+### Main + patches vs. full snapshots
 
 I prefer your hybrid approach:
 
-- Master CSV: current authoritative state.
+- Main CSV: current authoritative state.
 - Patches: incremental changes, with enough information to reconstruct history.
 - Original modlists: permanent import records.
 - Full snapshots: periodic checkpoints, keeping at least the last ten.
@@ -62,7 +62,7 @@ For example:
 This makes changes understandable and reversible.
 The patch should contain the previous value (Otherwise, reverting a change becomes more complicated)
 
-Important: A patch may be applied only against the expected previous master revision.
+Important: A patch may be applied only against the expected previous main list revision.
 This prevents accidentally applying an old patch to an unrelated database state.
 
 ## 2. Analysis of the three incomplete-list cases
@@ -94,7 +94,7 @@ Position heuristic:
 This is a good conservative approach
 Calculate positions relative to the existing list (do not compare unrelated line numbers).
 For that, matched entries serve as anchors. Their relative ordering is used to determine
-where the imported list ends in the master list.
+where the imported list ends in the main list.
 
 ### c) Partial modlist in disguise
 
@@ -152,7 +152,7 @@ Distinguish three kinds of records:
 | ------------------------- | ------------------------------ |
 | Original imported modlist | Permanent                      |
 | Parsed source snapshot    | Permanent                      |
-| Full master snapshot      | Last 10, plus initial baseline |
+| Full main list snapshot   | Last 10, plus initial baseline |
 | Incremental patches       | Permanent                      |
 
 Optionally store a SHA-256 hash of each original file. 
@@ -168,7 +168,7 @@ The resulting process should be:
 2. Identify active and disabled entries.
 3. Determine the effective boundary.
 4. Match existing entries using their names and separators.
-5. Establish positional anchors between source and master.
+5. Establish positional anchors between source and main list.
 6. Identify new entries.
 7. Identify missing entries before the effective boundary.
 8. Mark those missing entries as removal candidates.

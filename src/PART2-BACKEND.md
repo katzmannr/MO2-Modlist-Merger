@@ -6,7 +6,7 @@ The application maintains runtime compatibility data and synchronizes lists.
 
 - `parser.py`: parses MO2 `modlist.txt` (`+` enabled, `-` disabled; `separator_` prefix).
 - `exporter.py`: serializes the ordered list back to MO2 text.
-- `csv_store.py`: reads/writes dynamic master CSV.
+- `csv_store.py`: reads/writes dynamic main CSV.
 - `merge.py`: creates a non-destructive merge preview.
 - `workflow.py`: persists review markers outside the CSV.
 - `history.py`: immutable imports, patches, revision hashes and snapshots.
@@ -54,6 +54,13 @@ compatibility values. `unreviewed_skse_mods()` returns the names to show in a
 save warning. Marking a mod reviewed does not assert that all compatibility
 values are `True`; the UI use this as model for its own review interaction.
 
+This has a direct impact on the "Engines State":
+
+``compatible`` becomes a tri-state. An unreviewed value is not the same as
+incompatible. 
+
+``active`` can be optional: None means the engine-specific activation state has not been established / does not apply.
+
 ## Merge safety
 
 `preview_merge()` never mutates either input. `SourceScope.ASK` makes no
@@ -65,12 +72,16 @@ has no inferred boundary and needs an explicit override/decision.
 The preview lists candidates; removals happen only when their names are passed
 in `remove_missing`. The UI must show the effective boundary and warnings.
 
+For SKSE mods, a known source engine gets its own activation value. For
+ordinary / not-yet-classified mods, the imported MO2 activation is global.
+Compatibility and review metadata remain main-owned.
+
 ## History and commit
 
 - Original imports are copied to `momm-data/history/imports/<timestamp>/`.
-- Patches are JSON entries that act as operations with expected and resulting master revisions.
+- Patches are JSON entries that act as operations with expected and resulting main revisions.
 - Snapshots are retained according to `keep_snapshots`; this way baseline is preserved.
-- Repository commits back up the master CSV and workflow extra data before writing.
+- Repository commits back up the main CSV and workflow extra data before writing.
 - If a commit fails, the previous CSV and workflow metadata are restored.
 
 The repository requires the caller to pass the exact `before` state used to
@@ -87,5 +98,22 @@ prepare the operation. A revision check rejects stale commits.
   from being hidden inside serialization. See CSV structure for specific
   cases (export will already get the potentially correct mod informations)
 - Full system tests and the use-case-driven acceptance suite belong to Part 4.
+
+## Implementation notice
+
+Defensive programming is a good thing, but we must differentiate between anything
+from outside (parsed content, i.e. the CSV and the modlist.txt) and internal changes.
+A typical application often raises an exception and leave itself in a broken state
+assuming that the application is quite afterwards. In contrast any UI avoids this
+situation and has always a clean state of all it's internal and backend data. To
+achieve this, errors in parts of the implementations should be accumulated to some
+degree (i.e. a limited non-fix amount of lines, f.e. 25 by default). After reading
+a files, these errors will be presented to the user.
+
+On top, internally extra checks should not lead to exceptions. There are situations
+where memory can get corrupted, but these situations uncritical. On export only 
+general checks should be done that lead to an export error. The model containing
+the data however should be trusted from the other modules in general and does it's
+own internal checks to keep the data safe.
 
 Continue reading in [PART3-USERINTERFACE](PART3-USERINTERFACE.md).

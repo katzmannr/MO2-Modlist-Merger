@@ -28,7 +28,7 @@ Entries are either single values or arrays. They look very similar.
 
 For example "version" is just a string field.
 Each entry "storage" is on the same line, so you do not see a tree but
-storage - master file
+storage - main csv file
 storage - history directory
 etc. with string fields
 
