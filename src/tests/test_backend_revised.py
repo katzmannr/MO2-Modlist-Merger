@@ -258,6 +258,7 @@ class MainRepositoryCommitTests(unittest.TestCase):
 
         self.assertFalse(result.success)
         self.assertIsNone(result.patch)
+        self.assertIsInstance(result.issues[0], WorkflowIssue)
         self.assertEqual(result.issues[0].operation, "validate_proposed_main_list")
 
     def test_stale_main_revision_returns_workflow_issue(self):
