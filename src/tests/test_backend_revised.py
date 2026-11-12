@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from MOMM_backend.csv_store import MainCSVStore
 from MOMM_backend.engines import EngineRegistry, GameEngine
 from MOMM_backend.enums import EngineStatus, EntryType, ReviewStatus, SourceScope
-from MOMM_backend.errors import ConfigurationError
+from MOMM_backend.errors import ConfigurationError, WorkflowCommitResult, WorkflowIssue
 from MOMM_backend.config import AppSettings
 from MOMM_backend.history import apply_patch, build_patch
 from MOMM_backend.repository import MainRepository
@@ -222,6 +223,90 @@ class EngineAndWorkflowTests(unittest.TestCase):
         ])
         self.assertEqual(unreviewed_skse_mods(main_list), ["A", "B", "C"])
         self.assertEqual(review_summary(main_list), {"skse_mods": 4, "reviewed": 1, "unreviewed": 3})
+
+
+class MainRepositoryCommitTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.main_path = Path(self.tmp.name) / "main.csv"
+        self.repository = MainRepository(self.main_path, ENGINES, ENGINES)
+        self.original = MainModlist([ModlistEntry("A")])
+        MainCSVStore(ENGINES).save(self.original, self.main_path)
+
+    def test_successful_commit_returns_patch_in_result(self):
+        before = self.repository.load().main_list
+        after = MainModlist([ModlistEntry("A"), ModlistEntry("B")])
+
+        result = self.repository.commit(before, after, reason="test")
+
+        self.assertIsInstance(result, WorkflowCommitResult)
+        self.assertTrue(result.success)
+        self.assertIsNotNone(result.patch)
+        self.assertEqual(
+            [entry.name for entry in self.repository.load().main_list.entries],
+            ["A", "B"],
+        )
+
+    def test_invalid_proposed_main_list_returns_workflow_issue(self):
+        before = self.repository.load().main_list
+        after = MainModlist([
+            ModlistEntry("A", compatibility={"not-configured": True}),
+        ])
+
+        result = self.repository.commit(before, after, reason="test")
+
+        self.assertFalse(result.success)
+        self.assertIsNone(result.patch)
+        self.assertIsInstance(result.issues[0], WorkflowIssue)
+        self.assertEqual(result.issues[0].operation, "validate_proposed_main_list")
+
+    def test_stale_main_revision_returns_workflow_issue(self):
+        before = self.repository.load().main_list
+        MainCSVStore(ENGINES).save(MainModlist([ModlistEntry("A"), ModlistEntry("External")]), self.main_path)
+        after = MainModlist([ModlistEntry("A"), ModlistEntry("B")])
+
+        result = self.repository.commit(before, after, reason="test")
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.issues[0].operation, "check_main_revision")
+
+    def test_main_csv_write_failure_is_reported_and_old_file_restored(self):
+        before = self.repository.load().main_list
+        after = MainModlist([ModlistEntry("A"), ModlistEntry("B")])
+        original_bytes = self.main_path.read_bytes()
+
+        with patch.object(self.repository.csv_store, "save", side_effect=OSError("disk full")):
+            result = self.repository.commit(before, after, reason="test")
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.issues[0].operation, "write_main_csv")
+        self.assertEqual(self.main_path.read_bytes(), original_bytes)
+
+    def test_workflow_metadata_write_failure_rolls_back_main_csv(self):
+        before = self.repository.load().main_list
+        after = MainModlist([ModlistEntry("A"), ModlistEntry("B")])
+        original_bytes = self.main_path.read_bytes()
+
+        with patch.object(self.repository.workflow_store, "save", side_effect=OSError("read-only")):
+            result = self.repository.commit(before, after, reason="test")
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.issues[0].operation, "write_workflow_metadata")
+        self.assertEqual(self.main_path.read_bytes(), original_bytes)
+        self.assertFalse(self.repository.workflow_path.exists())
+
+    def test_invalid_current_csv_is_returned_as_workflow_issue(self):
+        before = self.repository.load().main_list
+        self.main_path.write_text("Name,Type,Active\\nA,mod,maybe\\n", encoding="utf-8")
+        after = MainModlist([ModlistEntry("A"), ModlistEntry("B")])
+
+        result = self.repository.commit(before, after, reason="test")
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.issues[0].operation, "load_current_main_list")
+        self.assertIsNotNone(result.issues[0].message)
+
 
 
 if __name__ == "__main__":
