@@ -10,18 +10,14 @@ if TYPE_CHECKING:
 
 IssueSeverity = Literal["fatal", "error", "warning"]
 
-
 class ModlistManagerError(Exception):
     """Base class for expected, user-presentable application errors."""
-
 
 class ConfigurationError(ModlistManagerError):
     """Settings are missing, malformed, or semantically invalid."""
 
-
 class ModelValidationError(ModlistManagerError):
     """An in-memory model violates application invariants."""
-
 
 class CSVStoreError(ModlistManagerError):
     """A CSV cannot be written or a persistence operation cannot proceed."""
@@ -39,12 +35,7 @@ class CSVIssue:
 
 @dataclass(slots=True)
 class CSVLoadResult:
-    """Atomic result of a CSV load.
-
-    Warnings do not prevent success. Any fatal/error issue means
-    ``main_list`` is None. The store never returns a partially populated
-    main list.
-    """
+    """Atomic result of a CSV load. Fatal / Error result in empty main_list. Only Full a list is valid"""
 
     main_list: MainModlist | None
     issues: list[CSVIssue] = field(default_factory=list)
@@ -77,11 +68,7 @@ class WorkflowIssue:
 
 @dataclass(slots=True)
 class WorkflowCommitResult:
-    """Result of a main-list commit; failures are returned rather than raised.
-
-    A successful result contains the generated history patch. On failure,
-    ``patch`` is None and ``issues`` describes what the UI should display.
-    """
+    """Result of a main-list commit; failures are returned."""
 
     patch: dict | None = None
     issues: list[WorkflowIssue] = field(default_factory=list)
