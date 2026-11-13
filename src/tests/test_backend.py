@@ -15,10 +15,10 @@ ENGINES = ("skyrim-1.5.97", "skyrim-1.6.1170")
 
 class ParserTests(unittest.TestCase):
     def test_parse_and_export_roundtrip(self):
-        text = "# header\n+Base\n+separator_Frameworks\n+SKSE Mod\n-Optional Mod\n"
+        text = "# header\n+Base\n+Frameworks_separator\n+SKSE Mod\n-Optional Mod\n"
         parsed = parse_modlist_text(text)
         self.assertEqual(len(parsed.entries), 4)
-        self.assertEqual(parsed.entries[1].entry_type, EntryType.MOD)
+        self.assertEqual(parsed.entries[1].entry_type, EntryType.SEPARATOR)
         self.assertTrue(parsed.entries[2].active)
         self.assertFalse(parsed.entries[3].active)
         output = export_modlist_text(parsed)
@@ -40,7 +40,7 @@ class CSVTests(unittest.TestCase):
                          compatibility={ENGINES[0]: True, ENGINES[1]: None}),
             ModlistEntry("Ordinary Mod", active=False, has_dll=False,
                          compatibility={ENGINES[0]: False, ENGINES[1]: True}),
-            ModlistEntry("separator_Core", entry_type=EntryType.SEPARATOR),
+            ModlistEntry("Core_separator", entry_type=EntryType.SEPARATOR),
         ])
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "main.csv"
