@@ -4,7 +4,7 @@ The application maintains runtime compatibility data and synchronizes lists.
 
 ## Backend modules
 
-- `parser.py`: parses MO2 `modlist.txt` (`+` enabled, `-` disabled; `separator_` prefix).
+- `parser.py`: parses MO2 `modlist.txt` (`+` enabled, `-` disabled; `_separator` prefix).
 - `exporter.py`: serializes the ordered list back to MO2 text.
 - `csv_store.py`: reads/writes dynamic main CSV.
 - `merge.py`: creates a non-destructive merge preview.

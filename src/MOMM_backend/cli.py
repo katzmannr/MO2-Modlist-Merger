@@ -18,10 +18,11 @@ def _default_settings() -> AppSettings:
         ],
         "instances": [],
         "storage": {
-            "main_file": "data/modlist_current.csv",
-            "history_directory": "data/history",
-            "patch_directory": "data/patches",
-            "snapshot_directory": "data/snapshots"
+            "main_file": "momm-data/modlist_current.csv",
+            "history_directory": "momm-data/history",
+            "patch_directory": "momm-data/patches",
+            "snapshot_directory": "momm-data/snapshots",
+            "mo2_profiles_directory": "momm-data/MO2/profiles"
         },
         "backup": {"enabled": True, "keep_snapshots": 10, "preserve_imported_modlists": True},
         "merge": {

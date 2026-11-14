@@ -22,7 +22,7 @@ class ParsedModlist:
 
 
 def _is_separator(name: str) -> bool:
-    return name.lower().startswith("_separator")
+    return name.lower().endswith("_separator")
 
 
 def parse_modlist_text(text: str, *, strict: bool = True) -> MainModlist:
