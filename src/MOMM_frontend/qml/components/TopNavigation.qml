@@ -49,7 +49,7 @@ Rectangle {
         }
 
         Label {
-            text: "MOMM"
+            text: "MOMM - MO2 Modlist Merger"
             color: "#e5e7eb"
             font.bold: true
         }

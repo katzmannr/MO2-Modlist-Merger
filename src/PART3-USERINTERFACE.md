@@ -204,6 +204,7 @@ when the review was not finished.
 
 Profiles are recommended to have differend modlist for each engine. The user is expected to have
 three different profiles when he has declared three engines in the settings.
+Profiles from the configured profiles folder are discovered and loaded by the backend.
 
 On top partial list handling is no longer needed. Any change from modlist.txt from the selected
 profiles (additions and deletions) is taken over. Removal needs to be confirmed.
@@ -282,9 +283,9 @@ The backend prepares a non-destructive merge preview. The UI must present:
 * Missing entries.
 * Warnings.
 
-Missing entries must never be automatically deleted. Should the backend find out, that a partial list shall be merged,
+Missing entries must never be automatically deleted. Should the backend find out, that a list to be merged has mods removed,
 the user must confirm a warning that the modified list will be integrated into the existing main list. 
-The warning message shows that \<amount\> entries of the existing main list will be removed.
+The warning message shows that \<amount\> entries of the existing main list will be removed (real mods without separator).
 
 The warning message says
 "By keeping the deleted mods from modlist.txt you are responsible for restoring those mods in your profile."
@@ -421,14 +422,14 @@ Snapshot creation and storage must be controlled by the backend.
 
 ### 6.4 Extract and Integrate
 
-The User can extract all skse mods into a csv that can be used with oder modlists.
+The User can extract all skse mods into a csv that can be used with older modlists.
 Integration of this information can be done while working with a different main list.
 
-The History allows to have user-defined local modlist.txt that are different or partial.
-The user can only merge these into the existing ones.
+The history stores previous modlist.txt that have been integrated into main list.
+This compensates for MO2 not having an automatic history function by itself.
 
 The Backup creates Snapshots and Full backups. Removing backups is done automatically
-under conditions defined from confugartion. A manual removal of main list is not planned.
+under conditions defined from configuration. A manual removal of main list is not planned.
 
 The user can integrate this special skse mod list csv into the existing mod with using "Integrate"
 In contrast to normal merge, no mods will be added to the main list, but only the information

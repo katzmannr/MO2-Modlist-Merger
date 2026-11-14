@@ -14,16 +14,16 @@ ApplicationWindow {
     minimumWidth: 850
     minimumHeight: 600
 
-    title: "MOMM - MO2 Modlist Merger"
+    title: "MOMM"
 
     color: "#202329"
 
-    property string currentPage: "main"
+    property string currentPage: "mainlist"
 
     function pageIndex(page) {
         switch (page) {
         case "settings": return 0
-        case "main": return 1
+        case "mainlist": return 1
         case "history": return 2
         case "backup": return 3
         default: return 1

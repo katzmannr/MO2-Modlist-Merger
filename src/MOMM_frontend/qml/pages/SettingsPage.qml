@@ -45,7 +45,7 @@ Page {
                     anchors.rightMargin: 12
 
                     Label {
-                        Layout.preferredWidth: 220
+                        Layout.preferredWidth: 230
                         text: modelData.group + " / " + modelData.label
                         color: "#e5e7eb"
                     }
