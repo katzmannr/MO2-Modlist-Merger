@@ -22,7 +22,7 @@ ENGINES = ("skyrim-1.5.97", "skyrim-1.6.1170")
 
 class ParserTests(unittest.TestCase):
     def test_mo2_parse_export_roundtrip(self):
-        source = parse_modlist_text("# header\n+Base\n+_separator_Core\n+DLL Mod\n-Optional\n")
+        source = parse_modlist_text("# header\n+Base\n+Core_separator\n+DLL Mod\n-Optional\n")
         self.assertEqual(source.entries[1].entry_type, EntryType.SEPARATOR)
         exported = export_modlist_text(source)
         again = parse_modlist_text(exported)
@@ -52,7 +52,7 @@ class CSVLoadTests(unittest.TestCase):
             ModlistEntry("Ordinary", active=False, has_dll=False, compatibility={
                 ENGINES[0]: EngineState(None, None),
             }),
-            ModlistEntry("_separator_Core", entry_type=EntryType.SEPARATOR),
+            ModlistEntry("Core_separator", entry_type=EntryType.SEPARATOR),
         ])
         self.store.save(main_list, self.path)
         result = self.store.load(self.path)

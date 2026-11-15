@@ -25,7 +25,8 @@
         "main_file": "momm-data/modlist_main.csv",
         "history_directory": "momm-data/history",
         "patch_directory": "momm-data/patches",
-        "snapshot_directory": "momm-data/snapshots"
+        "snapshot_directory": "momm-data/snapshots",
+        "mo2_profiles_directory": "momm-data/MO2/profiles"
     },
     "backup": {
         "enabled": true,
