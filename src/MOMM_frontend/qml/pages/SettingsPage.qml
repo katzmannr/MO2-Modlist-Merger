@@ -24,6 +24,84 @@ Page {
             color: "#aeb6c2"
         }
 
+
+        Label {
+            text: "MO2 Profiles"
+            color: "white"
+            font.pixelSize: 17
+            font.bold: true
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+
+            ComboBox {
+                id: profileSelector
+
+                Layout.fillWidth: true
+                model: backend.profileNames
+                currentIndex: backend.profileNames.indexOf(
+                    backend.selectedProfile
+                )
+
+                onActivated: function(index) {
+                    backend.selectProfile(currentText)
+                }
+            }
+
+            Button {
+                text: "Load profile"
+                enabled: profileSelector.currentIndex >= 0
+                onClicked: profileSwitchDialog.open()
+            }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: backend.profileNames.length === 0
+                ? "No profiles containing modlist.txt were found in the configured folder."
+                : "Loading a profile replaces the current Main List."
+            color: "#aeb6c2"
+            wrapMode: Text.Wrap
+        }
+
+        Dialog {
+            id: profileSwitchDialog
+
+            title: "Replace current Main List?"
+            modal: true
+            anchors.centerIn: Overlay.overlay
+            standardButtons: Dialog.Ok | Dialog.Cancel
+
+            contentItem: Label {
+                width: 420
+                wrapMode: Text.Wrap
+                color: "#e5e7eb"
+
+                text: {
+                    let message =
+                        "The selected profile will become the new source of truth.\n\n"
+                        + "The current Main List will be backed up. "
+                        + "Main Lists snapshots will be cleared.\n\n "
+                        + "DLL classification and compatibility knowledge "
+                        + "for matching mod names will be carried forward."
+
+                    if (backend.unreviewedSkseCount > 0) {
+                        message += "\n\nWARNING: "
+                            + backend.unreviewedSkseCount
+                            + " DLL entries have not completed their review."
+                    }
+
+                    return message
+                }
+            }
+
+            onAccepted: {
+                backend.loadProfile(profileSelector.currentText)
+            }
+        }
+
         ListView {
             Layout.fillWidth: true
             Layout.fillHeight: true

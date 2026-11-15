@@ -59,13 +59,15 @@ a modlist maintainer.
 - Store more details in history (amount of mods changes, maybe dates)
 - Store details about single mods (last change, current version, order change (position))
 - Store details about mod files changed (new files, changed files, removed files)
-- Allow settings to be changed in application
-- Allow engines to be added or removed
-- Allow import / export of support "knowledge" (import from sources like modding.wiki is
-  not planned; format will be a simplified csv format)
+- Allow extra import / export of support "knowledge" (import from sources like modding.wiki
+  is not planned; format will be a simplified csv format)
 - Allow storing of multiple partial lists (similar to, but different from MO2 profiles).
   this would especially allow filtering mods not used with some modlists because they lack
   API support provided by specific engine mods.
+- Merger page, that allows to create a single modlist file for MO2 from mutiple single
+  modlist files (see previous point)
+- Use details (like Nexus Mod Id) to identify mods that are duplicated (this is mainly
+  interesting for merging mods, shall not happen for normal mod lists)
 
 ## License
 

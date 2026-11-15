@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, Property, Signal, Slot
 from MOMM_backend.config import load_settings, save_settings
 from MOMM_backend.history import HistoryManager
 from MOMM_backend.repository import MainRepository
+from MOMM_backend.profiles import discover_profiles, switch_to_profile
 
 from MOMM_frontend.main_list_model import MainListModel
 
@@ -18,6 +19,7 @@ class BackendInterface(QObject):
     settingsChanged = Signal()
     archivesChanged = Signal()
     navigationLabelsChanged = Signal()
+    profilesChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -35,6 +37,13 @@ class BackendInterface(QObject):
         self._history_items = []
         self._backup_items = []
         self._navigation_labels = True
+
+        self._current_main_list = None
+        self._profiles = []
+        self._selected_profile = ""
+        self._profiles_directory = None
+        self._settings_path = None
+        self._project_root = Path(__file__).resolve().parents[2]
 
         self._initialize()
 
@@ -75,6 +84,8 @@ class BackendInterface(QObject):
                 history=self._history,
             )
 
+            self._refresh_profiles()
+
             self._engine_list = [
                 {
                     "id": engine.id,
@@ -92,6 +103,33 @@ class BackendInterface(QObject):
             self._refresh_settings_rows()
             self.refresh_main_list()
             self.refresh_archives()
+
+            settings_path = Path(
+                os.environ.get(
+                    "MOMM_SETTINGS",
+                    str(self._project_root / "dist" / "settings" / "settings.json"),
+                )
+            )
+            self._settings_path = settings_path
+
+            self._settings = load_settings(settings_path)
+            storage = self._settings.storage
+
+            def resolve_storage_path(value: str) -> Path:
+                path = Path(value)
+                return path if path.is_absolute() else self._project_root / path
+
+            main_path = resolve_storage_path(
+                storage.get("main_file", "momm-data/modlist_main.csv")
+            )
+            history_path = resolve_storage_path(
+                storage.get("history_directory", "momm-data/history")
+            )
+            self._profiles_directory = resolve_storage_path(
+                storage.get("mo2_profiles_directory", "")
+            )
+
+            self._selected_profile = storage.get("selected_profile", "")
 
         except Exception as exc:
             self._set_status(
@@ -139,12 +177,135 @@ class BackendInterface(QObject):
         self._settings_rows = rows
         self.settingsChanged.emit()
 
+    def _refresh_profiles(self):
+        if self._profiles_directory is None:
+            self._profiles = []
+        else:
+            try:
+                self._profiles = discover_profiles(self._profiles_directory)
+            except Exception as exc:
+                self._profiles = []
+                self._set_status(
+                    "Could not discover MO2 profiles",
+                    str(exc),
+                )
+
+        if self._selected_profile not in {
+            profile.name for profile in self._profiles
+        }:
+            self._selected_profile = ""
+
+        self.profilesChanged.emit()
+
+    @Property("QVariantList", notify=profilesChanged)
+    def profileNames(self):
+        return [profile.name for profile in self._profiles]
+
+    @Property(str, notify=profilesChanged)
+    def selectedProfile(self):
+        return self._selected_profile
+
+    @Property(int, notify=profilesChanged)
+    def unreviewedSkseCount(self):
+        if self._current_main_list is None:
+            return 0
+
+        from MOMM_backend.enums import EntryType, ReviewStatus
+
+        return sum(
+            1
+            for entry in self._current_main_list.entries
+            if entry.entry_type is EntryType.MOD
+            and entry.has_dll is True
+            and entry.review_status is not ReviewStatus.DONE
+        )
+
+    @Slot(str)
+    def selectProfile(self, profile_name: str):
+        if profile_name not in {p.name for p in self._profiles}:
+            self._set_status(
+                "Unknown MO2 profile",
+                profile_name,
+            )
+            return
+
+        self._selected_profile = profile_name
+        self.profilesChanged.emit()
+
+    @Slot(str)
+    def loadProfile(self, profile_name: str):
+        if self._repository is None or self._history is None:
+            self._set_status("Profile loading unavailable")
+            return
+
+        profile = next(
+            (p for p in self._profiles if p.name == profile_name),
+            None,
+        )
+
+        if profile is None:
+            self._set_status(
+                "MO2 profile not found",
+                profile_name,
+            )
+            return
+
+        try:
+            result = switch_to_profile(
+                profile.modlist_path,
+                self._current_main_list,
+                self._repository,
+                self._history,
+            )
+
+            # Update in-memory state only after the backend replacement succeeds.
+            self._current_main_list = result.main_list.clone()
+            self.main_list_model.set_main_list(result.main_list)
+
+            self._selected_profile = profile.name
+            self._settings.storage["selected_profile"] = profile.name
+
+            details = (
+                f"Source: {result.source_path}\n"
+                f"Known mods carrying forward: {result.preserved_mods}\n"
+                f"Previous Main List backup: "
+                f"{result.backup_path or 'No previous list'}\n"
+                "Previous snapshots were cleared."
+            )
+
+            try:
+                save_settings(self._settings, self._settings_path)
+            except Exception as exc:
+                details += f"\nCould not save selected profile setting: {exc}"
+
+            self._refresh_settings_rows()
+            self.refresh_archives()
+            self.profilesChanged.emit()
+
+            self._set_status(
+                f"Loaded MO2 profile: {profile.name}",
+                details,
+            )
+
+        except Exception as exc:
+            self._set_status(
+                "Profile switch failed — previous Main List retained",
+                str(exc),
+            )
+
     def refresh_main_list(self):
         if self._repository is None:
             self.main_list_model.set_main_list(None)
             return
 
         result = self._repository.load()
+
+        self._current_main_list = (
+            result.main_list.clone()
+            if result.success and result.main_list is not None
+            else None
+        )
+
         self.main_list_model.set_main_list(result.main_list)
 
         messages = [
@@ -191,7 +352,17 @@ class BackendInterface(QObject):
                 reverse=True,
             ):
                 self._backup_items.append({
-                    "label": path.name,
+                    "label": f"Snapshot — {path.name}",
+                    "path": str(path),
+                })
+
+        if self._history.backups.exists():
+            for path in sorted(
+                self._history.backups.glob("main_*.csv"),
+                reverse=True,
+            ):
+                self._backup_items.append({
+                    "label": f"Backup — {path.name}",
                     "path": str(path),
                 })
 

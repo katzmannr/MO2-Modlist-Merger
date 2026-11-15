@@ -6,12 +6,15 @@ The application maintains runtime compatibility data and synchronizes lists.
 
 - `parser.py`: parses MO2 `modlist.txt` (`+` enabled, `-` disabled; `_separator` prefix).
 - `exporter.py`: serializes the ordered list back to MO2 text.
+- `config.py`: (de)serializes settings. profiles handled separately
+- `engines.py`: configured engine definitions.
 - `csv_store.py`: reads/writes dynamic main CSV.
 - `merge.py`: creates a non-destructive merge preview.
 - `workflow.py`: persists review markers outside the CSV.
 - `history.py`: immutable imports, patches, revision hashes and snapshots.
 - `repository.py`: guarded commit with backups and rollback.
 - `models.py`: mod/separator records and dynamic compatibility mapping.
+- `profiles.py`: MO2 Pofile discovery and profile switch carrying forward mod knowledge.
 
 ## CSV structure
 

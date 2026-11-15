@@ -196,18 +196,22 @@ Selecting the UI section reveals them. This keeps the normal settings page compa
 
 ### 3.4 Profiles
 
-MO2 has a great profile feature and this application makes use of it. Reading of known profiles
-is done by the backend on startup. Manually adding/removing profiles is not supported.
+MO2 uses profiles for different mod loadouts. The known profiles are read by the backend.
+from the configured MO2 folder. Manually adding/removing profiles is not supported.
 
-This operation replaces the main list csv after a backup was created. A warning is only shown
-when the review was not finished.
+The profiles are selectable from the Settings Page. This is especially useful if User
+did create one profile for each Game engine.
 
-Profiles are recommended to have differend modlist for each engine. The user is expected to have
-three different profiles when he has declared three engines in the settings.
-Profiles from the configured profiles folder are discovered and loaded by the backend.
+Selecting a new profile replaces the main list after a backup of the csv was created. A warning is only shown
+when the review was not finished. Afterwards the modlist.txt from the profiles folder is loaded.
 
-On top partial list handling is no longer needed. Any change from modlist.txt from the selected
-profiles (additions and deletions) is taken over. Removal needs to be confirmed.
+The user has NOT to confirm a profile switch in general. The knowledge of changes he did on the main list
+is preserved, i.e. skse dlls belonging to a certain engine.
+
+Additionally the current main list csv is backed up, if previously changes were made. If changes were made,
+a backup of the mainlist is created.
+
+See chapter 6.4 for more information about how Extract/Insert is applied here.
 
 ### 3.5 Persistence and validation
 
@@ -274,29 +278,32 @@ A change in a skse dll needs a new confirmation by the user (backend information
 
 The shared status element may display a general review warning when unresolved SKSE/DLL entries remain.
 
-### 4.5 Refresh and merge
+### 4.5 Update and merge
 
-The user can refresh the Main List from a MO2 source.
+The user can update the Main List from the MO2 source.
 
-The backend prepares a non-destructive merge preview. The UI must present:
+Should the backend find out, that the updated modlist.txt misses mods or has new mods,
+a summary is shown of the update operation. It shows the \<amount\> of added mods and the
+\<amount\> of removed mods. The backend prepares a non-destructive merge preview. 
+
+The UI can show the changes as well (this can be added later):
 * New entries.
 * Missing entries.
-* Warnings.
-
-Missing entries must never be automatically deleted. Should the backend find out, that a list to be merged has mods removed,
-the user must confirm a warning that the modified list will be integrated into the existing main list. 
-The warning message shows that \<amount\> entries of the existing main list will be removed (real mods without separator).
 
 The warning message says
 "By keeping the deleted mods from modlist.txt you are responsible for restoring those mods in your profile."
 (or a similar shorter message). The extra message should be marked (f.e. bold letters)
 The message buttons should be "Still Keep" and "Remove".
 
+the user must confirm the warning that the modified list will be integrated into the existing main list. 
 There should be a short delay before the user can confirm the removal.
 
-The original imported `modlist.txt` remains unchanged.
+The sequence is similar to profile change, since the operation basically is identical.
+The backend can either perform the same sequence as in 3.4 or simply remove missing entries
+and add new entries. As always the sequence of the updated modlist.txt is kept.
 
-After a successful merge, affected entries must be reviewed again where required by the backend workflow.
+Note: MO2 has NO information about engine support. While the backend could find out about updated mods, it is the Users
+responsibility to update the changed mods. It is already an edge case that engines support changes.
 
 ### 4.6 Sections
 
@@ -371,14 +378,18 @@ Alternatively an external diff program could be considered like kdiff3.
 ### Purpose
 
 Backup is for MOMM's own main-list data, not original MO2 `modlist.txt` imports.
-
 It displays saved main-list CSV files and snapshots in read-only form.
+
+Full backups are simply a copy of the main list csv. Creation can be done by
+the user or before certain operations like profile switching. Snapshots are
+regular short-term backups of the current main list. They do not survive
+a profile change or full backup restoration.
 
 ### 6.1 Available operations
 
 **New**
 
-Creates a user backup of either the current Main List or a selected existing backup.
+Creates a user initiated backup of either the current Main List or a selected existing backup.
 
 **Use**
 
@@ -389,6 +400,8 @@ Before restoration:
 * Back up the current Main List.
 * Preserve the previous state.
 * Record the restoration through the backend history mechanism.
+
+This operation is different from a profile update or profile change.
 
 **Compare**
 

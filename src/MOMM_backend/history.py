@@ -79,6 +79,7 @@ class HistoryManager:
         self.keep_snapshots = max(1, int(keep_snapshots))
         self.imports = self.root / "imports"
         self.snapshots = self.root / "snapshots"
+        self.backups = self.root / "backups"
         self.patches = self.root.parent / "patches"
 
     def archive_import(self, source_file: str | Path, parsed_csv: str, changes: dict) -> Path:

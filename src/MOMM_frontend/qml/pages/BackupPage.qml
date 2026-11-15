@@ -13,15 +13,17 @@ Page {
         spacing: 12
 
         Label {
-            text: "Backup — MOMM main-list snapshots"
+            text: "Backup — Main List backups and snapshots"
             color: "white"
             font.pixelSize: 22
             font.bold: true
         }
 
         Label {
-            text: "CSV snapshots of the MOMM Main List. Read-only in this alpha."
+            text: "Full backups preserve the previous Main List before a profile switch. "
+                + "Snapshots belong to the currently active Main List."
             color: "#aeb6c2"
+            wrapMode: Text.Wrap
         }
 
         ListView {
